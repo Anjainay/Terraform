@@ -1,125 +1,127 @@
-# AWS_Instance using Terraform 
-## 🚀 AWS Infrastructure with Terraform
+Here’s a **README.md** for your Terraform project with a simple architecture diagram. You can expand or modify it later.
 
-This project uses **Terraform** to define and manage infrastructure on **Amazon Web Services (AWS)**. It sets up the necessary components, including the remote state backend, to ensure secure and collaborative infrastructure deployment.
+---
 
------
+# Terraform AWS ALB + EC2 Project
 
-## 📋 Prerequisites
+## **Project Overview**
 
-Before running this project, you must have the following installed and configured:
+This Terraform project deploys a simple web application infrastructure on AWS, consisting of:
 
-1.  **[Terraform](https://www.terraform.io/downloads.html):** Download and install the Terraform CLI.
-2.  **AWS CLI:** Configure your AWS credentials.
-3.  **Visual Studio Code (or preferred IDE):** For editing and running commands.
-4.  **AWS Credentials:** An IAM user with appropriate permissions (e.g., `AdministratorAccess` for initial setup) configured on your local machine.
+* **VPC** with public subnets
+* **Internet Gateway** for internet access
+* **Route Tables** associated with subnets
+* **Security Groups** for ALB and EC2
+* **Application Load Balancer (ALB)** with a listener
+* **Target Groups** and **Target Group Attachments**
+* **Two EC2 Instances** running Apache HTTP server
 
-### Credential Configuration
+The architecture ensures that the web servers are publicly accessible via the ALB, and traffic is restricted by security groups.
 
-Ensure your AWS credentials are set up using one of these methods:
+---
 
-  * **AWS CLI Profiles:** Use `aws configure` to set up a profile (e.g., `default`).
-  * **Environment Variables:** Set the following variables in your terminal before running Terraform commands:
-      * `$env:AWS_ACCESS_KEY_ID`
-      * `$env:AWS_SECRET_ACCESS_KEY`
+## **Architecture Diagram**
 
------
+```
+                 +---------------------------+
+                 |   AWS Application LB      |
+                 |  (HTTP:80)                |
+                 +-------------+-------------+
+                               |
+                -------------------------------
+                |                             |
+         +------+-----+                 +------+-----+
+         |  EC2 Web1  |                 |  EC2 Web2  |
+         | 10.0.1.10  |                 | 10.0.2.10  |
+         +------------+                 +------------+
+                |                             |
+       Security Group: ec2_sg           Security Group: ec2_sg
+       Allow HTTP from ALB              Allow HTTP from ALB
 
-## 🛠️ Project Setup and Initialization
+        Public Subnet1 (10.0.1.0/24)   Public Subnet2 (10.0.2.0/24)
+                 \                             /
+                  \                           /
+                   +-------------------------+
+                   |       VPC Main          |
+                   +-------------------------+
+                   | Internet Gateway (IGW)  |
+                   +-------------------------+
+```
 
-Follow these steps to initialize the Terraform project and connect to the remote state backend.
+---
 
-### 1\. Initialize Terraform
+## **Pre-requisites**
 
-Run the following command to download the necessary providers and initialize the **S3 remote backend** defined in your configuration files (`project.tf` or similar):
+* Terraform >= 1.4
+* AWS CLI configured with the profile used in provider (`default`)
+* An S3 bucket for storing Terraform state (`anjainaybackendcode123`)
+
+---
+
+## **Project Structure**
+
+```
+.
+├── provider.tf          # AWS provider and S3 backend
+├── vpc.tf               # VPC resource
+├── subnets.tf           # Public subnets
+├── igw.tf               # Internet Gateway
+├── route_table.tf       # Route table and associations
+├── security_groups.tf   # Security groups for ALB and EC2
+├── alb.tf               # Application Load Balancer
+├── target_group.tf      # ALB target group
+├── listener.tf          # ALB listener
+├── ec2.tf               # EC2 instances
+├── outputs.tf           # Outputs (optional)
+└── README.md
+```
+
+---
+
+## **Usage**
+
+1. Initialize Terraform:
 
 ```bash
 terraform init
 ```
 
-  * **Note:** If this is the first time running `init`, Terraform will create the S3 bucket specified in your `backend "s3"` block to store the state file (`terraform.tfstate`).
-
-### 2\. Validate Configuration
-
-Check your configuration files for syntax errors and internal consistency:
+2. Validate configuration:
 
 ```bash
 terraform validate
 ```
 
------
-
-## ☁️ Deployment Workflow
-
-### 1\. Plan the Changes
-
-Generate an execution plan to see exactly what actions Terraform will take (create, modify, or destroy) before applying any changes:
+3. Plan changes:
 
 ```bash
 terraform plan
 ```
 
-### 2\. Apply the Changes
-
-Apply the changes defined in the plan to provision the infrastructure in your AWS account. You will be prompted to confirm with `yes`.
+4. Apply configuration:
 
 ```bash
 terraform apply
 ```
 
------
+5. Verify deployed resources in AWS console.
 
-## 🧹 Clean Up
+---
 
-To destroy all infrastructure provisioned by this Terraform project, run the following command. **Use with caution**, as this will delete all resources and data.
+## **Outputs**
 
-```bash
-terraform destroy
-```
+* ALB DNS name
+* EC2 public IPs (optional)
+* Security group IDs (optional)
 
-You will be prompted to confirm with `yes`.
+---
 
------
+## **Notes**
 
-## 📁 Project Structure
+* Ensure subnet availability zones match the AWS region.
+* Security groups are set to allow HTTP traffic only from ALB.
+* Replace AMI IDs with valid IDs for your region.
 
-The core files for this project are:
+---
+yes
 
-| File Name | Description |
-| :--- | :--- |
-| `main.tf` | Defines the primary AWS resources (e.g., VPC, EC2, S3). |
-| `provider.tf` | **Defines the AWS provider, region, and the S3 backend configuration.** |
-| `variables.tf` | Contains input variable declarations (e.g., region, environment tags). |
-| `outputs.tf` | Defines output values (e.g., public IP, endpoint URL) after deployment. |
-| `.gitignore` | Ensures sensitive files like `terraform.tfstate` and `.terraform/` are not committed to Git. |
-
------
-
-## ⚙️ Backend Configuration
-
-This project uses an **AWS S3 bucket** for remote state management, which is crucial for team collaboration and security.
-
-  * **Bucket Name:** `anjainaybackendcode123`
-  * **State Key:** `code/terraform.tfstate`
-  * **Region:** `us-east-1`
-
-### Terraform Block (from your code):
-
-```terraform
-terraform {
-  required_version = ">= 1.4"
-  
-  backend "s3" { 
-    bucket = "anjainaybackendcode123"
-    key    = "code/terraform.tfstate"
-    region = "us-east-1"
-  }
-    
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = ">= 4.0"
-    }
-  }
-}
-```
